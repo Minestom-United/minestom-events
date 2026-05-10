@@ -1,6 +1,7 @@
 plugins {
     id("java-gradle-plugin")
     id("net.kyori.blossom") version "2.1.0"
+    `maven-publish`
 }
 
 group = "dev.minestomunited"
@@ -25,6 +26,45 @@ sourceSets {
         blossom {
             javaSources {
                 property("version", project.version.toString())
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        withType<MavenPublication> {
+            if (name == "pluginMaven") {
+                artifactId = "minestom-events"
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "MinestomUnitedRepository"
+            val isSnapshot = version.toString().endsWith("-SNAPSHOT")
+            url = uri(
+                if (isSnapshot)
+                    "https://repo.minestom-united.dev/snapshots"
+                else "https://repo.minestom-united.dev/releases"
+            )
+
+            var u = System.getenv("REPO_USERNAME")
+            var p = System.getenv("REPO_PASSWORD")
+
+            if (u == null || u.isEmpty()) u = "no-value-provided"
+            if (p == null || p.isEmpty()) p = "no-value-provided"
+
+            val user = providers.gradleProperty("MinestomUnitedRepositoryUsername").orElse(u).get()
+            val pass = providers.gradleProperty("MinestomUnitedRepositoryPassword").orElse(p).get()
+
+            credentials {
+                username = user
+                password = pass
+            }
+            authentication {
+                create<BasicAuthentication>("basic")
             }
         }
     }

@@ -13,4 +13,6 @@ public abstract class MinestomEventsExtension {
      * Restrict scanning to these packages (and their subpackages). Empty = scan all.
      */
     public abstract ListProperty<String> getScanPackages();
+
+    public abstract Property<Boolean> getExcludeDeprecatedForRemoval();
 }

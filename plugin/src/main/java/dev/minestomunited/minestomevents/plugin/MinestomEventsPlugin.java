@@ -1,5 +1,7 @@
 package dev.minestomunited.minestomevents.plugin;
 
+import java.util.List;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaPlugin;
@@ -18,7 +20,8 @@ public class MinestomEventsPlugin implements Plugin<Project> {
             "minestomEvents", MinestomEventsExtension.class
         );
         ext.getCompileOnly().convention(false);
-        ext.getScanPackages().convention(java.util.List.of());
+        ext.getScanPackages().convention(List.of());
+        ext.getExcludeDeprecatedForRemoval().convention(true);
 
         var generatedDir = project.getLayout().getBuildDirectory()
             .dir("generated/minestom-events/java");
@@ -41,7 +44,7 @@ public class MinestomEventsPlugin implements Plugin<Project> {
             });
             project.getDependencies().add(
                 JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME,
-                "dev.minestomunited:minestom-events:" + BuildConstants.VERSION
+                "dev.minestomunited:minestom-events-core:" + BuildConstants.VERSION
             );
         }
 
@@ -55,9 +58,15 @@ public class MinestomEventsPlugin implements Plugin<Project> {
                 task.getClasspath().from(
                     project.getConfigurations().named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
                 );
-                task.getSourceDirs().from(main.getJava().getSrcDirs());
+                var buildDir = project.getLayout().getBuildDirectory().get().getAsFile();
+                task.getSourceDirs().from(
+                    main.getJava().getSrcDirs().stream()
+                        .filter(dir -> !dir.getPath().startsWith(buildDir.getPath()))
+                        .toList()
+                );
                 task.getOutputPackage().set(ext.getOutputPackage());
                 task.getScanPackages().set(ext.getScanPackages());
+                task.getExcludeDeprecatedForRemoval().set(ext.getExcludeDeprecatedForRemoval());
                 task.getOutputDir().set(generatedDir);
             });
 
