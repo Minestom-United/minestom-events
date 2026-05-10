@@ -38,7 +38,7 @@ jobs:
           REPO_PASSWORD: ${{ secrets.REPO_PASSWORD }}
 
       - name: Publish Plugin
-        run: ./gradlew --build-cache --parallel -p plugin publish --no-daemon
+        run: ./gradlew --build-cache --parallel plugin:publish --no-daemon
         env:
           REPO_USERNAME: ${{ secrets.REPO_USERNAME }}
           REPO_PASSWORD: ${{ secrets.REPO_PASSWORD }}
