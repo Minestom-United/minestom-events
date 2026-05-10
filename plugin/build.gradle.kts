@@ -1,5 +1,6 @@
 plugins {
     id("java-gradle-plugin")
+    id("net.kyori.blossom") version "2.1.0"
 }
 
 group = "dev.minestomunited"
@@ -17,6 +18,16 @@ repositories {
 
 dependencies {
     implementation("io.github.classgraph:classgraph:4.8.179")
+}
+
+sourceSets {
+    main {
+        blossom {
+            javaSources {
+                property("version", project.version.toString())
+            }
+        }
+    }
 }
 
 gradlePlugin {

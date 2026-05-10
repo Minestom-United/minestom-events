@@ -1,5 +1,6 @@
 plugins {
     id("java-library")
+    `maven-publish`
 }
 
 group = "dev.minestomunited"

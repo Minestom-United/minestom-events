@@ -23,6 +23,28 @@ public class MinestomEventsPlugin implements Plugin<Project> {
         var generatedDir = project.getLayout().getBuildDirectory()
             .dir("generated/minestom-events/java");
 
+        project.getRepositories().maven(repo ->
+            repo.setUrl("https://repo.minestom-united.dev/"));
+
+        Project coreProject = project.getRootProject().getAllprojects().stream()
+            .filter(p -> "dev.minestomunited".equals(p.getGroup().toString())
+                && ":core".equals(p.getPath()))
+            .findFirst().orElse(null);
+        if (coreProject != null) {
+            project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, coreProject);
+        } else {
+            project.getRepositories().maven(repo -> {
+                boolean isSnapshot = BuildConstants.VERSION.endsWith("-SNAPSHOT");
+                repo.setUrl(isSnapshot
+                    ? "https://repo.minestom-united.dev/snapshots"
+                    : "https://repo.minestom-united.dev/releases");
+            });
+            project.getDependencies().add(
+                JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME,
+                "dev.minestomunited:minestom-events:" + BuildConstants.VERSION
+            );
+        }
+
         JavaPluginExtension javaExt = project.getExtensions().getByType(JavaPluginExtension.class);
         SourceSet main = javaExt.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
 
