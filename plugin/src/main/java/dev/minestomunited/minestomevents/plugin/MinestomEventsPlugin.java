@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.UnknownTaskException;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
@@ -74,6 +75,11 @@ public class MinestomEventsPlugin implements Plugin<Project> {
 
         project.getTasks().named(main.getCompileJavaTaskName())
             .configure(t -> t.dependsOn(generateTask));
+
+        try {
+            project.getTasks().named(main.getSourcesJarTaskName()).configure(t -> t.dependsOn(generateTask));
+        } catch (UnknownTaskException ignored) {
+        }
 
         project.getTasks().named("jar", Jar.class).configure(jar ->
             jar.exclude(e -> {
