@@ -191,6 +191,7 @@ public abstract class EventsGeneratorTask extends DefaultTask {
         sb.append("import dev.minestomunited.minestomevents.EventFilter;\n");
         sb.append("import dev.minestomunited.minestomevents.EventRegistrar;\n");
         sb.append("import java.util.function.Consumer;\n\n");
+        sb.append("@SuppressWarnings(\"all\")\n");
         sb.append("public final class Events {\n");
         sb.append("    private Events() {}\n\n");
 
