@@ -1,6 +1,6 @@
 plugins {
     java
-    id("dev.minestomunited.minestom-events")
+    id("dev.minestom-united.minestom-events")
 }
 
 group = "dev.minestomunited"

@@ -36,7 +36,7 @@ gradlePlugin {
     vcsUrl = "https://github.com/Minestom-United/minestom-events"
     plugins {
         create("minestomEvents") {
-            id = "dev.minestomunited.minestom-events"
+            id = "dev.minestom-united.minestom-events"
             implementationClass = "dev.minestomunited.minestomevents.plugin.MinestomEventsPlugin"
             displayName = "Minestom Events"
             description =
