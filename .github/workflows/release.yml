@@ -24,8 +24,8 @@ jobs:
       - name: Publish Core
         run: ./gradlew --build-cache --parallel core:publishToMavenCentral --no-daemon
         env:
-          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          mavenCentralUsername: ${{ secrets.CENTRAL_USERNAME }}
+          mavenCentralPassword: ${{ secrets.CENTRAL_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}
           SONATYPE_AUTOMATIC_RELEASE: true
