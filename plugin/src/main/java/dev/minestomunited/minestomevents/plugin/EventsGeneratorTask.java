@@ -34,14 +34,11 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class EventsGeneratorTask extends DefaultTask {
 
     private static final String MINESTOM_EVENT = "net.minestom.server.event.Event";
-    private static final String MINESTOM_EVENT_ANNO = "dev.minestomunited.minestomevents.MinestomEvent";
 
     private static final Pattern RE_PACKAGE = Pattern.compile(
         "^\\s*package\\s+([\\w.]+)\\s*;", Pattern.MULTILINE);
     private static final Pattern RE_CLASS = Pattern.compile(
         "(?:^|\\s)public\\s+(?:final\\s+)?(?:class|record)\\s+(\\w+)", Pattern.MULTILINE);
-    private static final Pattern RE_ANNO = Pattern.compile(
-        "@MinestomEvent(?:\\s|\\(|$)");
     private static final Pattern RE_IMPLEMENTS_EVENT = Pattern.compile(
         "\\bimplements\\b[^{]*\\bEvent\\b");
     private static final Pattern RE_DEPRECATED_FOR_REMOVAL = Pattern.compile(
@@ -117,8 +114,7 @@ public abstract class EventsGeneratorTask extends DefaultTask {
             return;
         }
 
-        if (!RE_ANNO.matcher(src).find()
-            && !RE_IMPLEMENTS_EVENT.matcher(src).find()
+        if (!RE_IMPLEMENTS_EVENT.matcher(src).find()
             && !RE_EXTENDS_EVENT.matcher(src).find()) return;
         if (getExcludeDeprecatedForRemoval().get() && RE_DEPRECATED_FOR_REMOVAL.matcher(src).find()) return;
 
@@ -150,14 +146,7 @@ public abstract class EventsGeneratorTask extends DefaultTask {
         }
 
         try (ScanResult result = cg.scan()) {
-            ClassInfoList annotated = result.getClassesWithAnnotation(MINESTOM_EVENT_ANNO);
             ClassInfoList subtypes = result.getClassesImplementing(MINESTOM_EVENT);
-
-            annotated.stream()
-                .filter(this::isConcretePublic)
-                .filter(ci -> !isDeprecatedForRemoval(ci))
-                .map(ClassInfo::getName)
-                .forEach(eventClasses::add);
 
             subtypes.stream()
                 .filter(this::isConcretePublic)
