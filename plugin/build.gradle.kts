@@ -1,16 +1,16 @@
 plugins {
     id("java-gradle-plugin")
     id("net.kyori.blossom") version "2.1.0"
-    `maven-publish`
+    id("com.gradle.plugin-publish") version "2.1.1"
 }
 
-group = "dev.minestomunited"
-version = "0.0.1-SNAPSHOT"
+group = "dev.minestom-united"
+version = "0.0.1"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -31,51 +31,17 @@ sourceSets {
     }
 }
 
-publishing {
-    publications {
-        withType<MavenPublication> {
-            if (name == "pluginMaven") {
-                artifactId = "minestom-events"
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "MinestomUnitedRepository"
-            val isSnapshot = version.toString().endsWith("-SNAPSHOT")
-            url = uri(
-                if (isSnapshot)
-                    "https://repo.minestom-united.dev/snapshots"
-                else "https://repo.minestom-united.dev/releases"
-            )
-
-            var u = System.getenv("REPO_USERNAME")
-            var p = System.getenv("REPO_PASSWORD")
-
-            if (u == null || u.isEmpty()) u = "no-value-provided"
-            if (p == null || p.isEmpty()) p = "no-value-provided"
-
-            val user = providers.gradleProperty("MinestomUnitedRepositoryUsername").orElse(u).get()
-            val pass = providers.gradleProperty("MinestomUnitedRepositoryPassword").orElse(p).get()
-
-            credentials {
-                username = user
-                password = pass
-            }
-            authentication {
-                create<BasicAuthentication>("basic")
-            }
-        }
-    }
-}
-
 gradlePlugin {
+    website = "https://github.com/Minestom-United/minestom-events"
+    vcsUrl = "https://github.com/Minestom-United/minestom-events"
     plugins {
         create("minestomEvents") {
             id = "dev.minestomunited.minestom-events"
             implementationClass = "dev.minestomunited.minestomevents.plugin.MinestomEventsPlugin"
             displayName = "Minestom Events"
+            description =
+                "Gradle plugin that generates a typed event API for Minestom by scanning event classes at build time"
+            tags = listOf("minestom", "generate", "events")
         }
     }
 }

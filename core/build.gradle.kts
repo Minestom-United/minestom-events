@@ -1,15 +1,15 @@
 plugins {
     id("java-library")
     `maven-publish`
+    id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "dev.minestomunited"
-version = "0.0.1-SNAPSHOT"
+group = "dev.minestom-united.minestom-events-core"
+version = "0.0.1"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
 }
 
 repositories {
@@ -17,43 +17,43 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.minestom:minestom:2026.05.11-1.21.11")
+    compileOnly("net.minestom:minestom:2026.06.05-26.1.2")
 }
 
-publishing {
-    repositories {
-        maven {
-            name = "MinestomUnitedRepository"
-            val isSnapshot = version.toString().endsWith("-SNAPSHOT")
-            url = uri(
-                if (isSnapshot)
-                    "https://repo.minestom-united.dev/snapshots"
-                else "https://repo.minestom-united.dev/releases"
-            )
+mavenPublishing {
+    coordinates("dev.minestom-united", "minestom-events-core", version as String?)
 
-            var u = System.getenv("REPO_USERNAME")
-            var p = System.getenv("REPO_PASSWORD")
+    publishToMavenCentral()
+    signAllPublications()
 
-            if (u == null || u.isEmpty()) u = "no-value-provided"
-            if (p == null || p.isEmpty()) p = "no-value-provided"
+    pom {
+        name = project.name
+        description = "Runtime library for the minestom-events typed event API for Minestom"
+        url = "https://github.com/Minestom-United/minestom-events"
 
-            val user = providers.gradleProperty("MinestomUnitedRepositoryUsername").orElse(u).get()
-            val pass = providers.gradleProperty("MinestomUnitedRepositoryPassword").orElse(p).get()
-
-            credentials {
-                username = user
-                password = pass
-            }
-            authentication {
-                create<BasicAuthentication>("basic")
+        licenses {
+            license {
+                name = "MIT"
+                url = "https://github.com/Minestom-United/minestom-events/blob/master/LICENSE"
             }
         }
-    }
 
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            artifactId = "minestom-events-core"
+        developers {
+            developer {
+                id = "Webhead1104"
+                url = "https://github.com/Webhead1104"
+            }
+        }
+
+        issueManagement {
+            system = "Github"
+            url = "https://github.com/Minestom-United/minestom-events/issues"
+        }
+
+        scm {
+            url.set("https://github.com/Minestom-United/minestom-events")
+            connection.set("scm:git:git://github.com/Minestom-United/minestom-events.git")
+            developerConnection.set("scm:git:git@github.com:Minestom-United/minestom-events.git")
         }
     }
 }
