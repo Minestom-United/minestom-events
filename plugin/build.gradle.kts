@@ -41,7 +41,7 @@ gradlePlugin {
             displayName = "Minestom Events"
             description =
                 "Gradle plugin that generates a typed event API for Minestom by scanning event classes at build time"
-            tags = listOf("minestom", "generate", "events")
+            tags = listOf("minestom", "minecraft", "generate", "events")
         }
     }
 }
