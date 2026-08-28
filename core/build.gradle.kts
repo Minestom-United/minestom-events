@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.minestom-united.minestom-events-core"
-version = "0.0.2"
+version = "0.0.3"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
