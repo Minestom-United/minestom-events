@@ -1,6 +1,6 @@
 plugins {
     id("java-gradle-plugin")
-    id("net.kyori.blossom") version "2.1.0"
+    id("net.kyori.blossom") version "2.2.0"
     id("com.gradle.plugin-publish") version "2.1.1"
 }
 
@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.classgraph:classgraph:4.8.179")
+    implementation("io.github.classgraph:classgraph:4.8.194")
 }
 
 sourceSets {

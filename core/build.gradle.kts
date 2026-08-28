@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
     `maven-publish`
-    id("com.vanniktech.maven.publish") version "0.36.0"
+    id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = "dev.minestom-united.minestom-events-core"
@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.minestom:minestom:2026.06.05-26.1.2")
+    compileOnly("net.minestom:minestom:2026.08.16-26.2")
 }
 
 mavenPublishing {
