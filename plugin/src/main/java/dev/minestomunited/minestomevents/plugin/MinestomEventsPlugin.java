@@ -8,7 +8,6 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.jvm.tasks.Jar;
 
 public class MinestomEventsPlugin implements Plugin<Project> {
 
@@ -19,7 +18,6 @@ public class MinestomEventsPlugin implements Plugin<Project> {
         MinestomEventsExtension ext = project.getExtensions().create(
             "minestomEvents", MinestomEventsExtension.class
         );
-        ext.getCompileOnly().convention(false);
         ext.getScanPackages().convention(List.of());
         ext.getExcludeDeprecatedForRemoval().convention(true);
 
@@ -56,14 +54,5 @@ public class MinestomEventsPlugin implements Plugin<Project> {
         project.getTasks()
             .matching(t -> t.getName().equals(main.getSourcesJarTaskName()))
             .configureEach(t -> t.dependsOn(generateTask));
-
-        project.getTasks().named("jar", Jar.class).configure(jar ->
-            jar.exclude(e -> {
-                if (!ext.getCompileOnly().get()) return false;
-                String path = e.getRelativePath().getPathString();
-                String genPath = ext.getOutputPackage().get().replace('.', '/');
-                return path.startsWith(genPath);
-            })
-        );
     }
 }

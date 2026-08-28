@@ -5,8 +5,6 @@ import org.gradle.api.provider.Property;
 
 public abstract class MinestomEventsExtension {
 
-    public abstract Property<Boolean> getCompileOnly();
-
     public abstract Property<String> getOutputPackage();
 
     /**
