@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.minestom:minestom:2026.08.16-26.2")
+    compileOnly("net.minestom:minestom:2026.08.28-26.2")
 }
 
 mavenPublishing {
