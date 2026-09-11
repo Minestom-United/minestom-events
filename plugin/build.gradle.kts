@@ -1,7 +1,7 @@
 plugins {
     id("java-gradle-plugin")
     id("net.kyori.blossom") version "2.2.0"
-    id("com.gradle.plugin-publish") version "2.1.1"
+    id("com.gradle.plugin-publish") version "2.2.0"
 }
 
 group = "dev.minestom-united"
@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.classgraph:classgraph:4.8.194")
+    implementation("io.github.classgraph:classgraph:4.8.195")
 }
 
 sourceSets {
