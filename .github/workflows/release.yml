@@ -7,6 +7,8 @@ jobs:
   publish:
     if: github.repository == 'Minestom-United/minestom-events'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create the tag and release
 
     steps:
       - uses: actions/checkout@v7
@@ -35,3 +37,18 @@ jobs:
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
           GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep -m1 '^version\s*=' plugin/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and GitHub release
+        run: >
+          gh release create "v${{ steps.version.outputs.version }}"
+          --target "$GITHUB_SHA"
+          --title "v${{ steps.version.outputs.version }}"
+          --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
