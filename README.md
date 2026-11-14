@@ -18,7 +18,7 @@ Requires Java 25.
 ```kotlin
 plugins {
     java
-    id("dev.minestomunited.minestom-events") version "0.0.1"
+    id("dev.minestomunited.minestom-events")  version "<version>"
 }
 
 repositories {
@@ -27,7 +27,7 @@ repositories {
 
 dependencies {
     implementation("net.minestom:minestom:2026.05.11-1.21.11")
-    implementation("dev.minestomunited:minestom-events-core:0.0.1")
+    implementation("dev.minestomunited:minestom-events-core:<version>")
 }
 
 minestomEvents {
@@ -65,15 +65,18 @@ public class TestEvent implements Event {}
 Events.onTest(event -> System.out.println("fired"));
 ```
 
+You can unregister the handler by calling
+
+```java
+EventHandler handler = Events.onPlayerBlockBreak(EventFilter.instance(instance), event -> ...);
+handler.unregister();
+```
+
 ## Config
 
 ```kotlin
 minestomEvents {
     outputPackage.set("com.example.generated")   // package for generated Events class
-    compileOnly.set(false)                        // true = strip Events from published jar (for libraries)
     scanPackages.set(listOf("net.minestom"))      // limit scan; empty = all
-    excludeDeprecatedForRemoval.set(true)         // skip @Deprecated(forRemoval = true) events
 }
 ```
-
-Method names: class name minus trailing `Event`, prefixed `on` — `PlayerBlockBreakEvent` → `onPlayerBlockBreak`.

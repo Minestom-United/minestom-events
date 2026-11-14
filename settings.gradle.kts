@@ -1,5 +1,10 @@
 pluginManagement {
     includeBuild("plugin")
+
+    repositories {
+        gradlePluginPortal()
+        maven("https://eldonexus.de/repository/maven-public/")
+    }
 }
 
 rootProject.name = "minestom-events"

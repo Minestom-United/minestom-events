@@ -1,6 +1,7 @@
 plugins {
     java
     id("dev.minestom-united.minestom-events")
+    application
 }
 
 group = "dev.minestomunited"
@@ -23,4 +24,8 @@ repositories {
 dependencies {
     implementation("net.minestom:minestom:2026.09.12-26.2")
     implementation(project(":core"))
+}
+
+application{
+    mainClass.set("dev.minestomunited.example.ExampleServer")
 }

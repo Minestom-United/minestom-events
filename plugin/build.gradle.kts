@@ -1,11 +1,11 @@
 plugins {
     id("java-gradle-plugin")
-    id("net.kyori.blossom") version "2.2.0"
     id("com.gradle.plugin-publish") version "2.2.1"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "dev.minestom-united"
-version = "0.0.3"
+version = "0.0.4"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -15,20 +15,17 @@ java {
 
 repositories {
     mavenCentral()
+    maven("https://eldonexus.de/repository/maven-public/")
 }
 
 dependencies {
-    implementation("io.github.classgraph:classgraph:4.8.196")
+    implementation("io.github.classgraph:classgraph:6.0.2")
+    implementation("net.strokkur.japutil:code-gen:0.1.4")
 }
 
-sourceSets {
-    main {
-        blossom {
-            javaSources {
-                property("version", project.version.toString())
-            }
-        }
-    }
+tasks.shadowJar {
+    archiveClassifier = ""
+    relocate("net.strokkur.japutil", "dev.minestomunited.minestomevents.plugin.shaded.japutil")
 }
 
 gradlePlugin {

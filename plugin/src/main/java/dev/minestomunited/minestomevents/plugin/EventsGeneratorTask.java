@@ -17,6 +17,20 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import net.strokkur.jap.code.CodeGenUtil;
+import net.strokkur.jap.code.annotations.CodeAnnotation;
+import net.strokkur.jap.code.classmodel.CodeClass;
+import net.strokkur.jap.code.classmodel.CodeMethod;
+import net.strokkur.jap.code.classmodel.CodeParameterDefinition;
+import net.strokkur.jap.code.classmodel.builder.ClassBuilder;
+import net.strokkur.jap.code.expression.Expressions;
+import net.strokkur.jap.code.expression.simple.CodeStringExpression;
+import net.strokkur.jap.code.statement.Statements;
+import net.strokkur.jap.code.type.CodeClassType;
+import net.strokkur.jap.code.type.CodeTypes;
+import net.strokkur.jap.code.type.generic.CodeGenericTypeDefinition;
+import net.strokkur.jap.code.type.generic.GenericEnclosure;
+import net.strokkur.jap.code.util.Modifiers;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
@@ -30,6 +44,8 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
+import static net.strokkur.jap.code.type.CodeTypes.generic;
+
 @CacheableTask
 public abstract class EventsGeneratorTask extends DefaultTask {
 
@@ -41,10 +57,17 @@ public abstract class EventsGeneratorTask extends DefaultTask {
         "(?:^|\\s)public\\s+(?:final\\s+)?(?:class|record)\\s+(\\w+)", Pattern.MULTILINE);
     private static final Pattern RE_IMPLEMENTS_EVENT = Pattern.compile(
         "\\bimplements\\b[^{]*\\bEvent\\b");
-    private static final Pattern RE_DEPRECATED_FOR_REMOVAL = Pattern.compile(
-        "@Deprecated\\s*\\(\\s*forRemoval\\s*=\\s*true");
     private static final Pattern RE_EXTENDS_EVENT = Pattern.compile(
         "\\bclass\\s+\\w+(?:<[^>]*>)?\\s+extends\\s+\\w*Event\\b");
+    private static final CodeClassType MINESTOM_EVENT_CODE_TYPE = CodeTypes.of("net.minestom.server.event.Event");
+    private static final CodeClassType JAVA_CLASS_CODE_TYPE = CodeTypes.of("java.lang.Class");
+    private static final CodeClassType JAVA_CONSUMER_CODE_TYPE = CodeTypes.of("java.util.function.Consumer");
+    private static final CodeClassType EVENT_REGISTRAR = CodeTypes.of(
+        "dev.minestomunited.minestomevents.EventRegistrar");
+    private static final CodeClassType EVENT_HANDLE = CodeTypes.of(
+        "dev.minestomunited.minestomevents.EventHandle");
+    private static final CodeClassType EVENT_FILTER = CodeTypes.of(
+        "dev.minestomunited.minestomevents.EventFilter");
 
     @InputFiles
     @PathSensitive(PathSensitivity.NONE)
@@ -60,9 +83,6 @@ public abstract class EventsGeneratorTask extends DefaultTask {
     @Input
     public abstract ListProperty<String> getScanPackages();
 
-    @Input
-    public abstract Property<Boolean> getExcludeDeprecatedForRemoval();
-
     @OutputDirectory
     public abstract DirectoryProperty getOutputDir();
 
@@ -70,7 +90,10 @@ public abstract class EventsGeneratorTask extends DefaultTask {
     public void generate() throws Exception {
         String pkg = getOutputPackage().get();
         File pkgDir = new File(getOutputDir().get().getAsFile(), pkg.replace('.', '/'));
-        pkgDir.mkdirs();
+        if (!pkgDir.exists() && !pkgDir.mkdirs()) {
+            getLogger().error("Could not create directory: {}", pkgDir);
+            return;
+        }
 
         Set<String> eventClasses = new LinkedHashSet<>();
 
@@ -116,7 +139,6 @@ public abstract class EventsGeneratorTask extends DefaultTask {
 
         if (!RE_IMPLEMENTS_EVENT.matcher(src).find()
             && !RE_EXTENDS_EVENT.matcher(src).find()) return;
-        if (getExcludeDeprecatedForRemoval().get() && RE_DEPRECATED_FOR_REMOVAL.matcher(src).find()) return;
 
         Matcher pkgMatcher = RE_PACKAGE.matcher(src);
         if (!pkgMatcher.find()) return;
@@ -139,76 +161,112 @@ public abstract class EventsGeneratorTask extends DefaultTask {
         ClassGraph cg = new ClassGraph()
             .enableClassInfo()
             .enableAnnotationInfo()
-            .overrideClasspath(classpathFiles);
+            .enableClasspathEntries(classpathFiles);
 
         if (!packages.isEmpty()) {
             cg.acceptPackages(packages.toArray(new String[0]));
         }
 
         try (ScanResult result = cg.scan()) {
-            ClassInfoList subtypes = result.getClassesImplementing(MINESTOM_EVENT);
+            ClassInfoList subtypes = result.getAllClassesImplementing(MINESTOM_EVENT);
 
             subtypes.stream()
                 .filter(this::isConcretePublic)
-                .filter(ci -> !isDeprecatedForRemoval(ci))
                 .map(ClassInfo::getName)
                 .forEach(eventClasses::add);
         }
-    }
-
-    private boolean isDeprecatedForRemoval(ClassInfo ci) {
-        if (!getExcludeDeprecatedForRemoval().get()) return false;
-        var anno = ci.getAnnotationInfo("java.lang.Deprecated");
-        if (anno == null) return false;
-        var param = anno.getParameterValues().getValue("forRemoval");
-        return Boolean.TRUE.equals(param);
     }
 
     private boolean isConcretePublic(ClassInfo ci) {
         return ci.isPublic()
             && !ci.isAbstract()
             && !ci.isInterface()
-            && !ci.isInnerClass()
-            && !ci.isAnonymousInnerClass();
+            && !ci.isNestedClass()
+            && !ci.isAnonymousClass();
     }
 
     private String buildSource(String pkg, List<String> eventClasses) {
+        ClassBuilder builder = CodeClass.builder(pkg + ".Events")
+            .addModifiers(Modifiers.PUBLIC, Modifiers.FINAL)
+            .addAnnotations(
+                CodeAnnotation.of(CodeTypes.of(SuppressWarnings.class), new CodeStringExpression("all")))
+            .addConstructor(ctor -> ctor.addModifiers(Modifiers.PRIVATE))
+            .addMethods(
+                CodeMethod.builder("on")
+                    .setReturnType(EVENT_HANDLE)
+                    .addModifiers(Modifiers.PUBLIC, Modifiers.STATIC)
+                    .addGenerics(
+                        CodeGenericTypeDefinition.of("E", GenericEnclosure.withExtends(MINESTOM_EVENT_CODE_TYPE)))
+                    .addParameters(
+                        CodeParameterDefinition.of(JAVA_CLASS_CODE_TYPE.typed(generic("E")), "eventClass"),
+                        CodeParameterDefinition.of(JAVA_CONSUMER_CODE_TYPE.typed(generic("E")), "handler")
+                    )
+                    .addCode(
+                        Statements.returnStmt(EVENT_REGISTRAR.chainMethod("register")
+                            .addParameters(Expressions.variable("eventClass"), Expressions.variable("handler")))
+                    ),
+                CodeMethod.builder("on")
+                    .setReturnType(EVENT_HANDLE)
+                    .addModifiers(Modifiers.PUBLIC, Modifiers.STATIC)
+                    .addGenerics(
+                        CodeGenericTypeDefinition.of("E", GenericEnclosure.withExtends(MINESTOM_EVENT_CODE_TYPE)))
+                    .addParameters(
+                        CodeParameterDefinition.of(JAVA_CLASS_CODE_TYPE.typed(generic("E")), "eventClass"),
+                        CodeParameterDefinition.of(EVENT_FILTER, "filter"),
+                        CodeParameterDefinition.of(JAVA_CONSUMER_CODE_TYPE.typed(generic("E")), "handler")
+                    )
+                    .addCode(
+                        Statements.returnStmt(
+                            EVENT_REGISTRAR.chainMethod("register")
+                                .addParameters(
+                                    Expressions.variable("eventClass"),
+                                    Expressions.variable("filter"),
+                                    Expressions.variable("handler")
+                                )
+                        )
+                    )
+            );
+
         Map<String, String> fqnToMethod = resolveMethodNames(eventClasses);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("package ").append(pkg).append(";\n\n");
-        sb.append("import dev.minestomunited.minestomevents.EventFilter;\n");
-        sb.append("import dev.minestomunited.minestomevents.EventRegistrar;\n");
-        sb.append("import java.util.function.Consumer;\n\n");
-        sb.append("@SuppressWarnings(\"all\")\n");
-        sb.append("public final class Events {\n");
-        sb.append("    private Events() {}\n\n");
-
-        sb.append("    public static <E extends net.minestom.server.event.Event> void on(\n");
-        sb.append("            Class<E> eventClass, Consumer<E> handler) {\n");
-        sb.append("        EventRegistrar.register(eventClass, handler);\n");
-        sb.append("    }\n\n");
-        sb.append("    public static <E extends net.minestom.server.event.Event> void on(\n");
-        sb.append("            Class<E> eventClass, EventFilter filter, Consumer<E> handler) {\n");
-        sb.append("        EventRegistrar.register(eventClass, filter, handler);\n");
-        sb.append("    }\n\n");
-
-        for (String fqn : eventClasses) {
-            String method = fqnToMethod.get(fqn);
-
-            sb.append("    public static void ").append(method)
-                .append("(Consumer<").append(fqn).append("> handler) {\n");
-            sb.append("        EventRegistrar.register(").append(fqn).append(".class, handler);\n");
-            sb.append("    }\n\n");
-
-            sb.append("    public static void ").append(method)
-                .append("(EventFilter filter, Consumer<").append(fqn).append("> handler) {\n");
-            sb.append("        EventRegistrar.register(").append(fqn).append(".class, filter, handler);\n");
-            sb.append("    }\n\n");
+        for (String eventClass : eventClasses) {
+            CodeClassType type = CodeTypes.of(eventClass);
+            String methodName = fqnToMethod.get(eventClass);
+            builder.addMethods(
+                CodeMethod.builder(methodName)
+                    .setReturnType(EVENT_HANDLE)
+                    .addModifiers(Modifiers.PUBLIC, Modifiers.STATIC)
+                    .addParameters(CodeParameterDefinition.of(JAVA_CONSUMER_CODE_TYPE.typed(type), "handler"))
+                    .addCode(
+                        Statements.returnStmt(
+                            EVENT_REGISTRAR.chainMethod("register")
+                                .addParameters(
+                                    type.chainField("class"),
+                                    Expressions.variable("handler")
+                                )
+                        )
+                    ),
+                CodeMethod.builder(methodName)
+                    .setReturnType(EVENT_HANDLE)
+                    .addModifiers(Modifiers.PUBLIC, Modifiers.STATIC)
+                    .addParameters(
+                        CodeParameterDefinition.of(EVENT_FILTER, "filter"),
+                        CodeParameterDefinition.of(JAVA_CONSUMER_CODE_TYPE.typed(type), "handler")
+                    )
+                    .addCode(
+                        Statements.returnStmt(
+                            EVENT_REGISTRAR.chainMethod("register")
+                                .addParameters(
+                                    type.chainField("class"),
+                                    Expressions.variable("filter"),
+                                    Expressions.variable("handler")
+                                )
+                        )
+                    )
+            );
         }
 
-        sb.append("}\n");
-        return sb.toString();
+        return CodeGenUtil.createJavaFile(builder.toClass());
     }
 
     private Map<String, String> resolveMethodNames(List<String> eventClasses) {

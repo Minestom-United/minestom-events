@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import net.minestom.server.event.Event;
+import net.minestom.server.event.EventListener;
 import net.minestom.server.event.EventNode;
 
 public final class EventRegistrar {
@@ -11,12 +12,14 @@ public final class EventRegistrar {
     private EventRegistrar() {
     }
 
-    public static <E extends Event> void register(Class<E> eventClass, Consumer<E> handler) {
-        EventsNode.get().addListener(eventClass, handler);
+    public static <E extends Event> EventHandle register(Class<E> eventClass, Consumer<E> handler) {
+        EventListener<E> listener = EventListener.of(eventClass, handler);
+        EventsNode.get().addListener(listener);
+        return new EventHandle(listener);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static <E extends Event> void register(Class<E> eventClass, EventFilter filter, Consumer<E> handler) {
+    public static <E extends Event> EventHandle register(Class<E> eventClass, EventFilter filter, Consumer<E> handler) {
         EventNode child = switch (filter) {
             case EventFilter.PlayerFilter f -> EventNode.value("pf-" + UUID.randomUUID(),
                 net.minestom.server.event.EventFilter.PLAYER, p -> p == f.player());
@@ -27,7 +30,9 @@ public final class EventRegistrar {
             case EventFilter.InventoryFilter f -> EventNode.value("ivf-" + UUID.randomUUID(),
                 net.minestom.server.event.EventFilter.INVENTORY, inv -> inv == f.inventory());
         };
-        child.addListener(eventClass, handler);
+        EventListener<E> listener = EventListener.of(eventClass, handler);
+        child.addListener(listener);
         EventsNode.get().addChild(child);
+        return new EventHandle(listener);
     }
 }

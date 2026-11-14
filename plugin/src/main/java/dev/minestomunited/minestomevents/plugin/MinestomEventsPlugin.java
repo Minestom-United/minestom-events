@@ -19,7 +19,6 @@ public class MinestomEventsPlugin implements Plugin<Project> {
             "minestomEvents", MinestomEventsExtension.class
         );
         ext.getScanPackages().convention(List.of());
-        ext.getExcludeDeprecatedForRemoval().convention(true);
 
         var generatedDir = project.getLayout().getBuildDirectory()
             .dir("generated/minestom-events/java");
@@ -42,7 +41,6 @@ public class MinestomEventsPlugin implements Plugin<Project> {
                 );
                 task.getOutputPackage().set(ext.getOutputPackage());
                 task.getScanPackages().set(ext.getScanPackages());
-                task.getExcludeDeprecatedForRemoval().set(ext.getExcludeDeprecatedForRemoval());
                 task.getOutputDir().set(generatedDir);
             });
 

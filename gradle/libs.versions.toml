@@ -1,0 +1,9 @@
+[versions]
+publish = "0.37.0"
+minestom = "2026.10.07-26.2"
+
+[libraries]
+minestom = { module = "net.minestom:minestom", version.ref = "minestom" }
+
+[plugins]
+publish = { id = "com.vanniktech.maven.publish", version.ref = "publish" }

@@ -2,6 +2,7 @@ package dev.minestomunited.example;
 
 import dev.minestomunited.example.generated.Events;
 import dev.minestomunited.minestomevents.EventFilter;
+import dev.minestomunited.minestomevents.EventHandle;
 import dev.minestomunited.minestomevents.EventsNode;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
@@ -29,16 +30,20 @@ public class ExampleServer {
             EventDispatcher.call(new TestEvent());
         });
 
-        Events.onPlayerDisconnect(event ->
-            System.out.println(event.getPlayer().getUsername() + " disconnected"));
 
         Events.onTest(_ ->
             System.out.println("TestEvent fired"));
 
+        EventHandle handle = Events.onPlayerDisconnect(event ->
+            System.out.println(event.getPlayer().getUsername() + " disconnected"));
+
         // Scoped — fires only for block breaks in this instance
-        Events.onPlayerBlockBreak(EventFilter.instance(world), event ->
+        Events.onPlayerBlockBreak(EventFilter.instance(world), event -> {
             event.getPlayer().sendMessage(
-                Component.text("Broke " + event.getBlock().name())));
+                Component.text("Broke " + event.getBlock().name()));
+            //Unregister the listener
+            handle.unregister();
+        });
 
         server.start("0.0.0.0", 25565);
     }

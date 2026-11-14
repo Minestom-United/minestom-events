@@ -1,34 +1,34 @@
 plugins {
-    id("java-library")
-    `maven-publish`
-    id("com.vanniktech.maven.publish") version "0.37.0"
+    `java-library`
+    alias(libs.plugins.publish)
 }
 
-group = "dev.minestom-united.minestom-events-core"
-version = "0.0.3"
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(25)
-    withSourcesJar()
-}
+group = "dev.minestom-united"
+version = "0.0.4"
+description = "Runtime library for the minestom-events typed event API for Minestom"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compileOnly("net.minestom:minestom:2026.09.12-26.2")
+    compileOnly(libs.minestom)
 }
 
-mavenPublishing {
-    coordinates("dev.minestom-united", "minestom-events-core", version as String?)
+java {
+    withSourcesJar()
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
 
+val isSnapshot = version.toString().endsWith("-SNAPSHOT")
+
+mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
 
     pom {
-        name = project.name
-        description = "Runtime library for the minestom-events typed event API for Minestom"
+        name = "minestom-events-core"
+        description = project.description
         url = "https://github.com/Minestom-United/minestom-events"
 
         licenses {
@@ -51,9 +51,9 @@ mavenPublishing {
         }
 
         scm {
-            url.set("https://github.com/Minestom-United/minestom-events")
-            connection.set("scm:git:git://github.com/Minestom-United/minestom-events.git")
-            developerConnection.set("scm:git:git@github.com:Minestom-United/minestom-events.git")
+            url = "https://github.com/Minestom-United/minestom-events"
+            connection = "scm:git:git://github.com/Minestom-United/minestom-events.git"
+            developerConnection = "scm:git:git@github.com:Minestom-United/minestom-events.git"
         }
     }
 }
